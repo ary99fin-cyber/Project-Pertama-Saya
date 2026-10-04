@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Resize Foto</title>
+    <title>Aplikasi Resize Foto Jernih</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; display: flex; justify-content: center; }
         .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; box-sizing: border-box; }
@@ -16,20 +16,20 @@
 <body>
 
 <div class="container">
-    <h2>Resize Resolusi Foto</h2>
+    <h2>Resize Resolusi Foto (Jernih)</h2>
     <p>Pilih foto dan tentukan ukuran lebarnya.</p>
     
     <input type="file" id="imageInput" accept="image/*">
     
     <label for="widthSelect">Lebar Maksimal:</label>
     <select id="widthSelect">
-        <option value="400">Kecil (400 px)</option>
-        <option value="800" selected>Sedang (800 px)</option>
-        <option value="1200">Besar (1200 px)</option>
+        <option value="800">Sedang (800 px)</option>
+        <option value="1200" selected>Besar / HD (1200 px)</option>
+        <option value="1920">Sangat HD (1920 px)</option>
     </select>
     
     <button id="processBtn">Proses & Unduh Foto</button>
-    <div id="loading">Memproses foto...</div>
+    <div id="loading">Memproses foto agar tetap tajam...</div>
 </div>
 
 <script>
@@ -54,7 +54,6 @@
             img.onload = function() {
                 const targetWidth = parseInt(widthSelect.value);
                 
-                // Hitung tinggi proporsional
                 let width = img.width;
                 let height = img.height;
                 if (width > targetWidth) {
@@ -62,14 +61,18 @@
                     width = targetWidth;
                 }
 
-                // Buat elemen canvas untuk meresize gambar
                 const canvas = document.createElement('canvas');
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
+                
+                // Mengaktifkan penghalusan gambar agar tidak pecah/pixelated
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // Ubah ke format file gambar (JPEG kualitas 80%)
+                // Ubah kualitas ke 0.95 (95%) agar ketajaman terjaga
                 canvas.toBlob((blob) => {
                     loading.style.display = 'none';
                     processBtn.disabled = false;
@@ -79,18 +82,17 @@
                         return;
                     }
 
-                    // Unduh otomatis ke HP
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'foto-resized.jpg';
+                    a.download = 'foto-jernih.jpg';
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
                     URL.revokeObjectURL(url);
 
-                    alert('Berhasil! Foto telah di-resize.');
-                }, 'image/jpeg', 0.8);
+                    alert('Berhasil! Foto jernih telah diunduh.');
+                }, 'image/jpeg', 0.95);
             };
             img.src = event.target.result;
         };
