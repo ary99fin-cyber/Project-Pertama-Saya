@@ -1,0 +1,6 @@
+Catatan belajar GitHub:
+1. Buat repositori baru
+2. Klik "Add file" → "Upload files"
+3. Seret dua file ini
+4. Commit changes
+5. Selesai! 🎉
