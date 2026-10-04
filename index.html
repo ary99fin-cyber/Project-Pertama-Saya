@@ -3,100 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Resize Foto Jernih</title>
+    <title>AI Photo Enhancer - DeepAI</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; display: flex; justify-content: center; }
         .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; box-sizing: border-box; }
-        input[type="file"], select { margin: 15px 0; width: 100%; padding: 10px; box-sizing: border-box; }
-        button { background: #0070f3; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; }
-        button:hover { background: #0051d5; }
-        #loading { display: none; margin-top: 10px; color: #555; }
+        input[type="file"] { margin: 15px 0; width: 100%; padding: 10px; box-sizing: border-box; }
+        button { background: #7c3aed; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; }
+        button:hover { background: #6d28d9; }
+        #loading { display: none; margin-top: 15px; color: #555; font-weight: bold; }
+        #resultContainer { margin-top: 20px; }
+        img { max-width: 100%; border-radius: 5px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Resize Resolusi Foto (Jernih)</h2>
-    <p>Pilih foto dan tentukan ukuran lebarnya.</p>
+    <h2>✨ AI Photo Enhancer</h2>
+    <p>Jernihkan foto buram menggunakan AI DeepAI.</p>
     
     <input type="file" id="imageInput" accept="image/*">
+    <button id="processBtn">Proses dengan AI ✨</button>
     
-    <label for="widthSelect">Lebar Maksimal:</label>
-    <select id="widthSelect">
-        <option value="800">Sedang (800 px)</option>
-        <option value="1200" selected>Besar / HD (1200 px)</option>
-        <option value="1920">Sangat HD (1920 px)</option>
-    </select>
+    <div id="loading">Sedang memproses AI, mohon tunggu sebentar (bisa 5-10 detik)...</div>
     
-    <button id="processBtn">Proses & Unduh Foto</button>
-    <div id="loading">Memproses foto agar tetap tajam...</div>
+    <div id="resultContainer"></div>
 </div>
 
 <script>
+    // MASUKKAN API KEY DEEPAI ANDA DI SINI
+    const DEEPAI_API_KEY = "52336f44-45d8-4909-944e-e7d8984cff35";
+
     const imageInput = document.getElementById('imageInput');
-    const widthSelect = document.getElementById('widthSelect');
     const processBtn = document.getElementById('processBtn');
     const loading = document.getElementById('loading');
+    const resultContainer = document.getElementById('resultContainer');
 
-    processBtn.addEventListener('click', () => {
+    processBtn.addEventListener('click', async () => {
         const file = imageInput.files[0];
         if (!file) {
             alert('Silakan pilih foto terlebih dahulu!');
             return;
         }
 
+        if (DEEPAI_API_KEY === "GANTI_DENGAN_API_KEY_ANDA") {
+            alert('Mohon masukkan API Key DeepAI terlebih dahulu di dalam kode!');
+            return;
+        }
+
         loading.style.display = 'block';
         processBtn.disabled = true;
+        resultContainer.innerHTML = '';
 
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = function() {
-                const targetWidth = parseInt(widthSelect.value);
-                
-                let width = img.width;
-                let height = img.height;
-                if (width > targetWidth) {
-                    height = Math.round((height * targetWidth) / width);
-                    width = targetWidth;
-                }
+        const formData = new FormData();
+        formData.append('image', file);
 
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                
-                // Mengaktifkan penghalusan gambar agar tidak pecah/pixelated
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'high';
-                
-                ctx.drawImage(img, 0, 0, width, height);
+        try {
+            // Memanggil Endpoint DeepAI Super Resolution / Enhancer
+            const response = await fetch("https://api.deepai.org/api/torch-srgan", {
+                method: 'POST',
+                headers: {
+                    'api-key': DEEPAI_API_KEY
+                },
+                body: formData
+            });
 
-                // Ubah kualitas ke 0.95 (95%) agar ketajaman terjaga
-                canvas.toBlob((blob) => {
-                    loading.style.display = 'none';
-                    processBtn.disabled = false;
+            const data = await response.json();
 
-                    if (!blob) {
-                        alert('Gagal memproses gambar.');
-                        return;
-                    }
+            if (data.output_url) {
+                loading.style.display = 'none';
+                processBtn.disabled = false;
 
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'foto-jernih.jpg';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    URL.revokeObjectURL(url);
-
-                    alert('Berhasil! Foto jernih telah diunduh.');
-                }, 'image/jpeg', 0.95);
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
+                // Tampilkan hasil foto jernih ke layar & buat tombol unduh
+                resultContainer.innerHTML = `
+                    <h3>Hasil AI:</h3>
+                    <img src="${data.output_url}" alt="Hasil Jernih AI"><br><br>
+                    <a href="${data.output_url}" target="_blank" download="foto-jernih-ai.jpg" style="background: #059669; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Unduh Foto Jernih</a>
+                `;
+            } else {
+                throw new Error(data.error || 'Gagal memproses gambar dengan AI.');
+            }
+        } catch (error) {
+            alert('Terjadi kesalahan: ' + error.message);
+            loading.style.display = 'none';
+            processBtn.disabled = false;
+        }
     });
 </script>
 
