@@ -1,59 +1,87 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>✨ Jernihkan Foto - Gratis</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: #f5f7fa; }
-    .container { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    h1 { color: #2c3e50; text-align: center; }
-    .upload-area { border: 2px dashed #3498db; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.3s; }
-    .upload-area:hover { background: #eef7ff; border-color: #2980b9; }
-    img { max-width: 100%; border-radius: 6px; margin-top: 15px; display: none; }
-    button { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 15px; }
-    button:hover { background: #219653; }
-    .note { font-size: 0.9em; color: #7f8c8d; margin-top: 20px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Resize Foto</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        input[type="file"], select { margin: 15px 0; width: 100%; padding: 10px; box-sizing: border-box; }
+        button { background: #0070f3; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background: #0051d5; }
+        #loading { display: none; margin-top: 10px; color: #555; }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>✨ Jernihkan Foto Gratis</h1>
-    <p>Upload foto buram → klik "Jernihkan" → hasil muncul di bawah.</p>
 
-    <div id="uploadArea" class="upload-area">
-      <p>📁 Klik atau seret gambar ke sini</p>
-      <input type="file" id="fileInput" accept="image/*" style="display:none;">
-    </div>
+<div class="container">
+    <h2>Resize Resolusi Foto</h2>
+    <p>Unggah foto Anda dan pilih ukuran lebar (width) yang diinginkan.</p>
+    
+    <form id="uploadForm">
+        <input type="file" id="imageInput" accept="image/*" required>
+        
+        <label for="widthSelect">Pilih Lebar Maksimal:</label>
+        <select id="widthSelect">
+            <option value="400">Kecil (400 px)</option>
+            <option value="800" selected>Sedang (800 px)</option>
+            <option value="1200">Besar (1200 px)</option>
+        </select>
+        
+        <button type="submit" id="submitBtn">Proses & Unduh Foto</button>
+    </form>
 
-    <img id="preview" alt="Preview gambar">
-    <button id="processBtn">⚡ Jernihkan (Demo)</button>
-    <div class="note">
-      ⚠️ Catatan: Ini adalah versi demo. Untuk fungsi nyata, diperlukan backend (Supabase/Vercel Edge Function).  
-      Tapi untuk belajar GitHub + HTML — ini sudah cukup!
-    </div>
-  </div>
+    <div id="loading">Memproses foto, mohon tunggu...</div>
+</div>
 
-  <script>
-    const uploadArea = document.getElementById('uploadArea');
-    const fileInput = document.getElementById('fileInput');
-    const preview = document.getElementById('preview');
-    const processBtn = document.getElementById('processBtn');
+<script>
+    const form = document.getElementById('uploadForm');
+    const imageInput = document.getElementById('imageInput');
+    const widthSelect = document.getElementById('widthSelect');
+    const loading = document.getElementById('loading');
+    const submitBtn = document.getElementById('submitBtn');
 
-    uploadArea.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const url = URL.createObjectURL(file);
-        preview.src = url;
-        preview.style.display = 'block';
-        processBtn.disabled = false;
-      }
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!imageInput.files[0]) return;
+
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        formData.append('width', widthSelect.value);
+
+        loading.style.display = 'block';
+        submitBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/resize', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error('Gagal memproses gambar');
+
+            // Tanggapannya berupa file biner gambar, kita buat link unduh otomatis
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'foto-resized.jpg';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            
+            window.URL.revokeObjectURL(url);
+            alert('Berhasil! Foto telah di-resize dan diunduh.');
+        } catch (error) {
+            alert('Terjadi kesalahan saat memproses foto.');
+            console.error(error);
+        } finally {
+            loading.style.display = 'none';
+            submitBtn.disabled = false;
+        }
     });
+</script>
 
-    processBtn.addEventListener('click', () => {
-      alert("✅ Demo berhasil! \n\nDalam versi nyata, gambar akan diproses dengan AI (misal: Real-ESRGAN). \nUntuk sekarang, ini hanya simulasi — tapi struktur GitHub-nya sudah siap!");
-    });
-  </script>
 </body>
 </html>
