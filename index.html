@@ -21,9 +21,6 @@
     <h2>✨ AI Photo Enhancer</h2>
     <p>Jernihkan foto buram dengan AI.</p>
     
-    <!-- MASUKKAN API KEY DEEPAI ANDA DI SINI -->
-    <input type="hidden" id="apiKey" value="1945f"> <!-- Ganti teks 1945f dengan API Key lengkap Anda -->
-    
     <input type="file" id="imageInput" accept="image/*">
     <button id="processBtn">Proses dengan AI ✨</button>
     
@@ -32,6 +29,11 @@
 </div>
 
 <script>
+    // ==========================================
+    // MASUKKAN API KEY DEEPAI ANDA DI DALAM TANDA KUTIP DI BAWAH INI:
+    // ==========================================
+    const DEEPAI_API_KEY = "52336f44-45d8-4909-944e-e7d8984cff35";
+
     const imageInput = document.getElementById('imageInput');
     const processBtn = document.getElementById('processBtn');
     const loading = document.getElementById('loading');
@@ -39,15 +41,13 @@
 
     processBtn.addEventListener('click', async () => {
         const file = imageInput.files[0];
-        // Ambil API Key dari value input hidden di atas
-        const apiKey = "MASUKKAN_API_KEY_ANDA_DISINI"; // <-- Tempel API Key Anda di dalam tanda kutip ini!
 
         if (!file) {
             alert('Silakan pilih foto terlebih dahulu!');
             return;
         }
 
-        if (apiKey === "52336f44-45d8-4909-944e-e7d8984cff35" || !apiKey) {
+        if (DEEPAI_API_KEY === "MASUKKAN_API_KEY_ANDA_DISINI" || !DEEPAI_API_KEY) {
             alert('Mohon masukkan API Key DeepAI di dalam kode script!');
             return;
         }
@@ -63,7 +63,7 @@
             const response = await fetch("https://api.deepai.org/api/torch-srgan", {
                 method: 'POST',
                 headers: {
-                    'api-key': apiKey
+                    'api-key': DEEPAI_API_KEY
                 },
                 body: formData
             });
