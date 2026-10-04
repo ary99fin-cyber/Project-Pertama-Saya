@@ -1,0 +1,6 @@
+{
+  "routes": [
+    { "src": "/api/resize", "dest": "/api/resize.ts", "methods": ["POST"] },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
