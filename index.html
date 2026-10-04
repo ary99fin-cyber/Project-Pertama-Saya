@@ -6,7 +6,7 @@
     <title>Aplikasi Resize Foto</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; box-sizing: border-box; }
         input[type="file"], select { margin: 15px 0; width: 100%; padding: 10px; box-sizing: border-box; }
         button { background: #0070f3; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; }
         button:hover { background: #0051d5; }
@@ -17,69 +17,84 @@
 
 <div class="container">
     <h2>Resize Resolusi Foto</h2>
-    <p>Unggah foto Anda dan pilih ukuran lebar (width) yang diinginkan.</p>
+    <p>Pilih foto dan tentukan ukuran lebarnya.</p>
     
-    <form id="uploadForm">
-        <input type="file" id="imageInput" accept="image/*" required>
-        
-        <label for="widthSelect">Pilih Lebar Maksimal:</label>
-        <select id="widthSelect">
-            <option value="400">Kecil (400 px)</option>
-            <option value="800" selected>Sedang (800 px)</option>
-            <option value="1200">Besar (1200 px)</option>
-        </select>
-        
-        <button type="submit" id="submitBtn">Proses & Unduh Foto</button>
-    </form>
-
-    <div id="loading">Memproses foto, mohon tunggu...</div>
+    <input type="file" id="imageInput" accept="image/*">
+    
+    <label for="widthSelect">Lebar Maksimal:</label>
+    <select id="widthSelect">
+        <option value="400">Kecil (400 px)</option>
+        <option value="800" selected>Sedang (800 px)</option>
+        <option value="1200">Besar (1200 px)</option>
+    </select>
+    
+    <button id="processBtn">Proses & Unduh Foto</button>
+    <div id="loading">Memproses foto...</div>
 </div>
 
 <script>
-    const form = document.getElementById('uploadForm');
     const imageInput = document.getElementById('imageInput');
     const widthSelect = document.getElementById('widthSelect');
+    const processBtn = document.getElementById('processBtn');
     const loading = document.getElementById('loading');
-    const submitBtn = document.getElementById('submitBtn');
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!imageInput.files[0]) return;
-
-        const formData = new FormData();
-        formData.append('image', imageInput.files[0]);
-        formData.append('width', widthSelect.value);
+    processBtn.addEventListener('click', () => {
+        const file = imageInput.files[0];
+        if (!file) {
+            alert('Silakan pilih foto terlebih dahulu!');
+            return;
+        }
 
         loading.style.display = 'block';
-        submitBtn.disabled = true;
+        processBtn.disabled = true;
 
-        try {
-            const response = await fetch('/api/resize', {
-                method: 'POST',
-                body: formData
-            });
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const targetWidth = parseInt(widthSelect.value);
+                
+                // Hitung tinggi proporsional
+                let width = img.width;
+                let height = img.height;
+                if (width > targetWidth) {
+                    height = Math.round((height * targetWidth) / width);
+                    width = targetWidth;
+                }
 
-            if (!response.ok) throw new Error('Gagal memproses gambar');
+                // Buat elemen canvas untuk meresize gambar
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
 
-            // Tanggapannya berupa file biner gambar, kita buat link unduh otomatis
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'foto-resized.jpg';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            
-            window.URL.revokeObjectURL(url);
-            alert('Berhasil! Foto telah di-resize dan diunduh.');
-        } catch (error) {
-            alert('Terjadi kesalahan saat memproses foto.');
-            console.error(error);
-        } finally {
-            loading.style.display = 'none';
-            submitBtn.disabled = false;
-        }
+                // Ubah ke format file gambar (JPEG kualitas 80%)
+                canvas.toBlob((blob) => {
+                    loading.style.display = 'none';
+                    processBtn.disabled = false;
+
+                    if (!blob) {
+                        alert('Gagal memproses gambar.');
+                        return;
+                    }
+
+                    // Unduh otomatis ke HP
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'foto-resized.jpg';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+
+                    alert('Berhasil! Foto telah di-resize.');
+                }, 'image/jpeg', 0.8);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
     });
 </script>
 
